@@ -59,5 +59,11 @@ To run L2 attacks on JEM-1
 python attack_model.py --start_batch 0 --end_batch 6 --load_path /cloud_storage/BEST_EBM.pt --exp_name rerun_ebm_1_step_5_dup_l2_no_sigma_REDO --n_steps_refine 1 --distance L2 --random_init --n_dup_chains 5 --sigma 0.0 --base_dir /cloud_storage/adv_results &
  ```
  
+### Energy
+To save energies
+```markdown
+python eval_wrn_ebm.py --load_path CIFAR10_MODEL.pt --eval pri_energy --dataset cifar_test --save_dir output_energy
+```
+
 
 Happy Energy-Based Modeling! 
