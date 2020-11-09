@@ -218,11 +218,13 @@ def logp_hist(f, args, device):
         "cifar10": tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=False),
         "svhn": tv.datasets.SVHN(root="../data", transform=transform_test, download=True, split="test"),
         "cifar100":tv.datasets.CIFAR100(root="../data", transform=transform_test, download=True, train=False),
-        "celeba": tv.datasets.ImageFolder(root="/scratch/gobi1/gwohl/CelebA/splits",
+        #"celeba": tv.datasets.ImageFolder(root="/scratch/gobi1/gwohl/CelebA/splits",
+        "celeba": tv.datasets.CelebA(root="../data",
                                           transform=tr.Compose([tr.Resize(32),
                                                                 tr.ToTensor(),
                                                                 tr.Normalize((.5, .5, .5), (.5, .5, .5)),
-                                                                lambda x: x + args.sigma * t.randn_like(x)]))
+                                                                lambda x: x + args.sigma * t.randn_like(x)]),
+                                          download=True)
     }
 
     score_dict = {}
@@ -267,11 +269,13 @@ def OODAUC(f, args, device):
     elif args.ood_dataset == "cifar_100":
         dset_fake = tv.datasets.CIFAR100(root="../data", transform=transform_test, download=True, train=False)
     elif args.ood_dataset == "celeba":
-        dset_fake = tv.datasets.ImageFolder(root="/scratch/gobi1/gwohl/CelebA/splits",
+        #dset_fake = tv.datasets.ImageFolder(root="/scratch/gobi1/gwohl/CelebA/splits",
+        dset_fake = tv.datasets.CelebA(root="../data",
                                             transform=tr.Compose([tr.Resize(32),
                                                        tr.ToTensor(),
                                                        tr.Normalize((.5, .5, .5), (.5, .5, .5)),
-                                                       lambda x: x + args.sigma * t.randn_like(x)]))
+                                                       lambda x: x + args.sigma * t.randn_like(x)]),
+                                            download=True)
     else:
         dset_fake = tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=False)
 
@@ -368,7 +372,66 @@ def test_clf(f, args, device):
     t.save({"losses": losses, "corrects": corrects, "pys": pys}, os.path.join(args.save_dir, "vals.pt"))
     print(loss, correct)
 
+def pri_energy(f, args, device):
+    transform_test = tr.Compose(
+        [tr.ToTensor(),
+         tr.Normalize((.5, .5, .5), (.5, .5, .5)),
+         lambda x: x + t.randn_like(x) * args.sigma]
+    )
 
+    def sample(x, n_steps=args.n_steps):
+        x_k = t.autograd.Variable(x.clone(), requires_grad=True)
+        # sgld
+        for k in range(n_steps):
+            f_prime = t.autograd.grad(f(x_k).sum(), [x_k], retain_graph=True)[0]
+            x_k.data += f_prime + 1e-2 * t.randn_like(x_k)
+        final_samples = x_k.detach()
+        return final_samples
+
+    if args.dataset == "cifar_train":
+        dset = tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=True)
+    elif args.dataset == "cifar_test":
+        dset = tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=False)
+    elif args.dataset == "svhn_train":
+        dset = tv.datasets.SVHN(root="../data", transform=transform_test, download=True, split="train")
+    else:  # args.dataset == "svhn_test":
+        dset = tv.datasets.SVHN(root="../data", transform=transform_test, download=True, split="test")
+
+    dload = DataLoader(dset, batch_size=100, shuffle=False, num_workers=4, drop_last=False)
+
+    energies, corrects, losses, pys, preds = [], [], [], [], []
+    for x_p_d, y_p_d in tqdm(dload):
+        x_p_d, y_p_d = x_p_d.to(device), y_p_d.to(device)
+        if args.n_steps > 0:
+            x_p_d = sample(x_p_d)
+        logits = f.classify(x_p_d)
+
+        
+        py = nn.Softmax()(f.classify(x_p_d)).max(1)[0].detach().cpu().numpy()
+        
+        loss = nn.CrossEntropyLoss(reduce=False)(logits, y_p_d).cpu().detach().numpy()
+        losses.extend(loss)
+        
+        correct = (logits.max(1)[1] == y_p_d).float().cpu().numpy()        
+        corrects.extend(correct)
+
+        energy = logits.logsumexp(dim=1, keepdim=False).cpu().detach().numpy()
+        energies.extend(energy)
+        
+
+    loss = np.mean(losses)
+    correct = np.mean(corrects)
+    
+    e_mean = np.mean(energies)
+    e_var = np.var(energies)
+    
+    print(e_mean, e_var, np.sqrt(e_var))
+    
+    # save energies in a text file
+    import pandas as pd     
+    pd.DataFrame(energies).to_csv(os.path.join(args.save_dir, "energies.csv"))
+    
+    
 def main(args):
     utils.makedirs(args.save_dir)
     if args.print_to_log:
@@ -396,7 +459,10 @@ def main(args):
 
     if args.eval == "test_clf":
         test_clf(f, args, device)
-
+        
+    if args.eval == "pri_energy":
+        pri_energy(f, args, device)
+        
     if args.eval == "cond_samples":
         cond_samples(f, replay_buffer, args, device, args.fresh_samples)
 
@@ -411,7 +477,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Energy Based Models and Shit")
     parser.add_argument("--eval", default="OOD", type=str,
-                        choices=["uncond_samples", "cond_samples", "logp_hist", "OOD", "test_clf"])
+                        choices=["uncond_samples", "cond_samples", "logp_hist", "OOD", "test_clf", "pri_energy"])
     parser.add_argument("--score_fn", default="px", type=str,
                         choices=["px", "py", "pxgrad"], help="For OODAUC, chooses what score function we use.")
     parser.add_argument("--ood_dataset", default="svhn", type=str,
@@ -438,7 +504,7 @@ if __name__ == "__main__":
     parser.add_argument("--sgld_lr", type=float, default=1.0)
     parser.add_argument("--sgld_std", type=float, default=1e-2)
     # logging + evaluation
-    parser.add_argument("--save_dir", type=str, default='YOUR_SAVE_PATH_BUDDDDDDYYYYYYY')
+    parser.add_argument("--save_dir", type=str, default='output')
     parser.add_argument("--print_every", type=int, default=100)
     parser.add_argument("--n_sample_steps", type=int, default=100)
     parser.add_argument("--load_path", type=str, default=None)
