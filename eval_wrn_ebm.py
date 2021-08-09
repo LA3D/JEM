@@ -217,14 +217,14 @@ def logp_hist(f, args, device):
     datasets = {
         "cifar10": tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=False),
         "svhn": tv.datasets.SVHN(root="../data", transform=transform_test, download=True, split="test"),
-        "cifar100":tv.datasets.CIFAR100(root="../data", transform=transform_test, download=True, train=False),
+        "cifar100":tv.datasets.CIFAR100(root="../data", transform=transform_test, download=True, train=False)
         #"celeba": tv.datasets.ImageFolder(root="/scratch/gobi1/gwohl/CelebA/splits",
-        "celeba": tv.datasets.CelebA(root="../data",
-                                          transform=tr.Compose([tr.Resize(32),
-                                                                tr.ToTensor(),
-                                                                tr.Normalize((.5, .5, .5), (.5, .5, .5)),
-                                                                lambda x: x + args.sigma * t.randn_like(x)]),
-                                          download=True)
+#         "celeba": tv.datasets.CelebA(root="../data",
+#                                           transform=tr.Compose([tr.Resize(32),
+#                                                                 tr.ToTensor(),
+#                                                                 tr.Normalize((.5, .5, .5), (.5, .5, .5)),
+#                                                                 lambda x: x + args.sigma * t.randn_like(x)]),
+#                                           download=True)
     }
 
     score_dict = {}
@@ -241,7 +241,7 @@ def logp_hist(f, args, device):
         score_dict[dataset_name] = this_scores
 
     for name, scores in score_dict.items():
-        plt.hist(scores, label=name, bins=100, normed=True, alpha=.5)
+        plt.hist(scores, label=name, bins=100, density=True, alpha=.5)
     plt.legend()
     plt.savefig(args.save_dir + "/fig.pdf")
 
