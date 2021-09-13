@@ -1,0 +1,23 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python train_wrn_ebm.py
+    deps:
+    - path: train_wrn_ebm.py
+      md5: e581d4eeb9bf05dd886cfedb12fcad13
+      size: 22089
+    params:
+      params.yaml:
+        batch_size: 96
+        dataset: cifar10
+        epochs: 1
+        loss.weight.p_x: 1.0
+        loss.weight.p_x_y: 0.0
+        loss.weight.p_y_given_x: 1.0
+    outs:
+    - path: plot.json
+      md5: a76a12748f3f9f0116c09c96d437a9c2
+      size: 1100
+    - path: scores.json
+      md5: fbc55a588bd7bc012b1bf2a07944642a
+      size: 138

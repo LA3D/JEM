@@ -291,6 +291,8 @@ def main(args):
     else:
         optim = t.optim.SGD(params, lr=args.lr, momentum=.9, weight_decay=args.weight_decay)
 
+    plot_data = { "p_x": [], "p_y_given_x": [], "p_x_y": [] }
+
     best_valid_acc = 0.0
     cur_iter = 0
     for epoch in range(args.n_epochs):
@@ -299,6 +301,7 @@ def main(args):
                 new_lr = param_group['lr'] * args.decay_rate
                 param_group['lr'] = new_lr
             print("Decaying lr to {}".format(new_lr))
+        print("Steps: {}".format(len(dload_train)))
         for i, (x_p_d, _) in tqdm(enumerate(dload_train)):
             if cur_iter <= args.warmup_iters:
                 lr = args.lr * cur_iter / float(args.warmup_iters)
@@ -325,6 +328,13 @@ def main(args):
 
                 l_p_x = -(fp - fq)
                 if cur_iter % args.print_every == 0:
+                    plot_data["p_x"].append({
+                        "epoch": epoch, 
+                        "iteration": cur_iter, 
+                        "x_p_d": float(fp), 
+                        "x_q": float(fq), 
+                        "difference": float(fp - fq), 
+                    })
                     print('P(x) | {}:{:>d} f(x_p_d)={:>14.9f} f(x_q)={:>14.9f} d={:>14.9f}'.format(epoch, i, fp, fq,
                                                                                                    fp - fq))
                 L += args.p_x_weight * l_p_x
@@ -334,6 +344,12 @@ def main(args):
                 l_p_y_given_x = nn.CrossEntropyLoss()(logits, y_lab)
                 if cur_iter % args.print_every == 0:
                     acc = (logits.max(1)[1] == y_lab).float().mean()
+                    plot_data["p_y_given_x"].append({
+                        "epoch": epoch, 
+                        "iteration": cur_iter, 
+                        "loss": float(l_p_y_given_x.item()), 
+                        "accuracy": float(acc.item()),
+                    })
                     print('P(y|x) {}:{:>d} loss={:>14.9f}, acc={:>14.9f}'.format(epoch,
                                                                                  cur_iter,
                                                                                  l_p_y_given_x.item(),
@@ -346,10 +362,22 @@ def main(args):
                 fp, fq = f(x_lab, y_lab).mean(), f(x_q_lab, y_lab).mean()
                 l_p_x_y = -(fp - fq)
                 if cur_iter % args.print_every == 0:
+                    plot_data["p_x_y"].append({
+                        "epoch": epoch, 
+                        "iteration": cur_iter, 
+                        "x_p_d": float(fp), 
+                        "x_q": float(fq), 
+                        "difference": float(fp - fq), 
+                    })
                     print('P(x, y) | {}:{:>d} f(x_p_d)={:>14.9f} f(x_q)={:>14.9f} d={:>14.9f}'.format(epoch, i, fp, fq,
                                                                                                       fp - fq))
 
                 L += args.p_x_y_weight * l_p_x_y
+
+            if cur_iter % args.print_every == 0:
+                # write stats
+                with open('plot.json', 'w') as outfile:
+                    json.dump(plot_data, outfile)
 
             # break if the loss diverged...easier for poppa to run experiments this way
             if L.abs().item() > 1e8:
@@ -362,7 +390,7 @@ def main(args):
             cur_iter += 1
 
             if cur_iter % 100 == 0:
-                if args.plot_uncond:
+                if args.plot_uncond or True:
                     if args.class_cond_p_x_sample:
                         assert not args.uncond, "can only draw class-conditional samples if EBM is class-cond"
                         y_q = t.randint(0, args.n_classes, (args.batch_size,)).to(device)
@@ -370,7 +398,7 @@ def main(args):
                     else:
                         x_q = sample_q(f, replay_buffer)
                     plot('{}/x_q_{}_{:>06d}.png'.format(args.save_dir, epoch, i), x_q)
-                if args.plot_cond:  # generate class-conditional samples
+                if args.plot_cond or True:  # generate class-conditional samples
                     y = t.arange(0, args.n_classes)[None].repeat(args.n_classes, 1).transpose(1, 0).contiguous().view(-1).to(device)
                     x_q_y = sample_q(f, replay_buffer, y=y)
                     plot('{}/x_q_y{}_{:>06d}.png'.format(args.save_dir, epoch, i), x_q_y)
@@ -379,10 +407,12 @@ def main(args):
             checkpoint(f, replay_buffer, f'ckpt_{epoch}.pt', args, device)
 
         if epoch % args.eval_every == 0 and (args.p_y_given_x_weight > 0 or args.p_x_y_weight > 0):
+            scores = {}
             f.eval()
             with t.no_grad():
                 # validation set
                 correct, loss = eval_classification(f, dload_valid, device)
+                scores["validation"] = {"acc:": float(correct), "loss": float(loss)}
                 print("Epoch {}: Valid Loss {}, Valid Acc {}".format(epoch, loss, correct))
                 if correct > best_valid_acc:
                     best_valid_acc = correct
@@ -390,18 +420,34 @@ def main(args):
                     checkpoint(f, replay_buffer, "best_valid_ckpt.pt", args, device)
                 # test set
                 correct, loss = eval_classification(f, dload_test, device)
+                scores["test"] = {"acc:": float(correct), "loss": float(loss)}
                 print("Epoch {}: Test Loss {}, Test Acc {}".format(epoch, loss, correct))
+
+                # write stats
+                with open('scores.json', 'w') as outfile:
+                    json.dump(scores, outfile)
             f.train()
         checkpoint(f, replay_buffer, "last_ckpt.pt", args, device)
 
 
+import yaml
+params = yaml.safe_load(open("params.yaml"))
+
+def get_parameter(name, default):
+    to_search = params
+    for part in name.split("."):
+        result = to_search.get(part)
+        if result == None:
+            return default
+        to_search = result
+    return to_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Energy Based Models and Shit")
-    parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "svhn", "cifar100"])
+    parser.add_argument("--dataset", type=str, default=get_parameter("dataset", "cifar10"), choices=["cifar10", "svhn", "cifar100"])
     parser.add_argument("--data_root", type=str, default="../data")
     # optimization
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=get_parameter("lr", 1e-4))
     parser.add_argument("--decay_epochs", nargs="+", type=int, default=[160, 180],
                         help="decay learning rate by decay_rate at these epochs")
     parser.add_argument("--decay_rate", type=float, default=.3,
@@ -410,14 +456,14 @@ if __name__ == "__main__":
     parser.add_argument("--labels_per_class", type=int, default=-1,
                         help="number of labeled examples per class, if zero then use all labels")
     parser.add_argument("--optimizer", choices=["adam", "sgd"], default="adam")
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=200)
+    parser.add_argument("--batch_size", type=int, default=get_parameter("batch_size", 64))
+    parser.add_argument("--n_epochs", type=int, default=get_parameter("epochs", 100))
     parser.add_argument("--warmup_iters", type=int, default=-1,
                         help="number of iters to linearly increase learning rate, if -1 then no warmmup")
     # loss weighting
-    parser.add_argument("--p_x_weight", type=float, default=1.)
-    parser.add_argument("--p_y_given_x_weight", type=float, default=1.)
-    parser.add_argument("--p_x_y_weight", type=float, default=0.)
+    parser.add_argument("--p_x_weight", type=float, default=get_parameter("loss.weight.p_x", 1.0))
+    parser.add_argument("--p_y_given_x_weight", type=float, default=get_parameter("loss.weight.p_y_given_x", 1.0))
+    parser.add_argument("--p_x_y_weight", type=float, default=get_parameter("loss.weight.p_x_y", 1.0))
     # regularization
     parser.add_argument("--dropout_rate", type=float, default=0.0)
     parser.add_argument("--sigma", type=float, default=3e-2,

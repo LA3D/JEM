@@ -1,0 +1,18 @@
+stages:
+  train:
+    cmd: python train_wrn_ebm.py
+    deps:
+    - train_wrn_ebm.py
+    metrics:
+      - scores.json:
+          cache: false
+    plots:
+      - plot.json:
+          cache: false
+    params:
+      - dataset
+      - epochs
+      - batch_size
+      - loss.weight.p_x
+      - loss.weight.p_y_given_x
+      - loss.weight.p_x_y

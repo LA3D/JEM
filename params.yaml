@@ -1,0 +1,12 @@
+dataset: cifar10
+lr: 1e-4
+epochs: 1
+batch_size: 96
+decay:
+  epochs: [160, 180]
+  rate: 0.3
+loss:
+  weight:
+    p_x: 1.0
+    p_y_given_x: 1.0
+    p_x_y: 0.0
