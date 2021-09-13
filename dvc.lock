@@ -21,3 +21,20 @@ stages:
     - path: scores.json
       md5: fbc55a588bd7bc012b1bf2a07944642a
       size: 138
+  evaluate-clf:
+    cmd: python eval_wrn_ebm.py --load_path experiment/best_valid_ckpt.pt --eval test_clf
+    deps:
+    - path: eval_wrn_ebm.py
+      md5: 81711aadccfc160d45cc6b3a030c82bd
+      size: 20895
+    - path: experiment/best_valid_ckpt.pt
+      md5: 7e2035275a301715a9ad99812f1a5c2e
+      size: 268817324
+    params:
+      params.yaml:
+        batch_size: 96
+        dataset: cifar10
+    outs:
+    - path: eval_clf.json
+      md5: b370fc07800fed6ae6cf4e6a3dfe6184
+      size: 57

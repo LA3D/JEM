@@ -3,6 +3,8 @@ stages:
     cmd: python train_wrn_ebm.py
     deps:
     - train_wrn_ebm.py
+    outs:
+    - experiment/best_valid_ckpt.pt
     metrics:
       - scores.json:
           cache: false
@@ -16,3 +18,14 @@ stages:
       - loss.weight.p_x
       - loss.weight.p_y_given_x
       - loss.weight.p_x_y
+  evaluate-clf:
+    cmd: python eval_wrn_ebm.py --load_path experiment/best_valid_ckpt.pt --eval test_clf
+    deps:
+    - eval_wrn_ebm.py
+    - experiment/best_valid_ckpt.pt
+    metrics:
+      - eval_clf.json:
+          cache: false
+    params:
+      - dataset
+      - batch_size

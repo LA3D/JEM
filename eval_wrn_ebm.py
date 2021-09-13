@@ -23,6 +23,7 @@ import argparse
 import numpy as np
 import wideresnet
 import pdb
+import json
 
 from tqdm import tqdm
 # Sampling
@@ -344,7 +345,7 @@ def test_clf(f, args, device):
 
     if args.dataset == "cifar_train":
         dset = tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=True)
-    elif args.dataset == "cifar_test":
+    elif args.dataset == "cifar_test" or args.dataset == "cifar10":
         dset = tv.datasets.CIFAR10(root="../data", transform=transform_test, download=True, train=False)
     elif args.dataset == "svhn_train":
         dset = tv.datasets.SVHN(root="../data", transform=transform_test, download=True, split="train")
@@ -371,6 +372,9 @@ def test_clf(f, args, device):
     correct = np.mean(corrects)
     t.save({"losses": losses, "corrects": corrects, "pys": pys}, os.path.join(args.save_dir, "vals.pt"))
     print(loss, correct)
+    scores = {"acc:": float(correct), "loss": float(loss)}
+    with open('eval_clf.json', 'w') as outfile:
+        json.dump(scores, outfile)
 
 def pri_energy(f, args, device):
     transform_test = tr.Compose(
@@ -472,7 +476,17 @@ def main(args):
     if args.eval == "logp_hist":
         logp_hist(f, args, device)
 
+import yaml
+params = yaml.safe_load(open("params.yaml"))
 
+def get_parameter(name, default):
+    to_search = params
+    for part in name.split("."):
+        result = to_search.get(part)
+        if result == None:
+            return default
+        to_search = result
+    return to_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Energy Based Models and Shit")
@@ -483,13 +497,13 @@ if __name__ == "__main__":
     parser.add_argument("--ood_dataset", default="svhn", type=str,
                         choices=["svhn", "cifar_interp", "cifar_100", "celeba"],
                         help="Chooses which dataset to compare against for OOD")
-    parser.add_argument("--dataset", default="cifar_test", type=str,
-                        choices=["cifar_train", "cifar_test", "svhn_test", "svhn_train"],
+    parser.add_argument("--dataset", default=get_parameter("dataset", "cifar10"), type=str,
+                        choices=["cifar_train", "cifar_test", "cifar10", "svhn_test", "svhn_train"],
                         help="Dataset to use when running test_clf for classification accuracy")
     parser.add_argument("--datasets", nargs="+", type=str, default=[],
                         help="The datasets you wanna use to generate a log p(x) histogram")
     # optimization
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=get_parameter("batch_size", 64))
     # regularization
     parser.add_argument("--sigma", type=float, default=3e-2)
     # network
