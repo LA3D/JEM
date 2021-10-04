@@ -1,0 +1,10 @@
+md5: bef879d0339ed0ae8337177653d24862
+frozen: true
+deps:
+- etag: '"a299817-46b8be548cc0f"'
+  size: 170498071
+  path: https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+outs:
+- md5: c58f30108f718f92721af3b95e74349a
+  size: 170498071
+  path: cifar-10-python.tar.gz

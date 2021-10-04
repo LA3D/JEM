@@ -1,0 +1,7 @@
+stages:
+  extract-data:
+    cmd: tar -xf dataset/cifar-10-python.tar.gz --exclude='readme.html' --directory dataset/
+    deps:
+    - dataset/cifar-10-python.tar.gz
+    outs:
+    - dataset/cifar-10-batches-py

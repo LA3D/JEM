@@ -1,0 +1,14 @@
+schema: '2.0'
+stages:
+  extract-data:
+    cmd: tar -xf dataset/cifar-10-python.tar.gz --exclude='readme.html' --directory
+      dataset/
+    deps:
+    - path: dataset/cifar-10-python.tar.gz
+      md5: c58f30108f718f92721af3b95e74349a
+      size: 170498071
+    outs:
+    - path: dataset/cifar-10-batches-py
+      md5: b4947b13f75e53d7d1661505c7b936f7.dir
+      size: 186214026
+      nfiles: 7
