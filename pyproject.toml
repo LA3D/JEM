@@ -33,3 +33,6 @@ build-backend = "pdm.pep517.api"
 
 [tool]
 [tool.pdm]
+[tool.pdm.scripts]
+convert-notebook = {shell = "JUPYTER_DATA_DIR=$PEP582_PACKAGES/share/jupyter/ jupyter nbconvert --to script train.ipynb"}
+train = {shell = "python train.py"}

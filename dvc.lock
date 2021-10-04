@@ -13,8 +13,7 @@ stages:
       size: 186214026
       nfiles: 7
   convert-notebook:
-    cmd: JUPYTER_DATA_DIR=$PWD/__pypackages__/3.8/share/jupyter/ pdm run jupyter nbconvert
-      --to script train.ipynb
+    cmd: pdm run convert-notebook
     deps:
     - path: train.ipynb
       md5: 670c0315fe491bad483932e1f532767b
