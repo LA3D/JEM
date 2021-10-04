@@ -22,14 +22,9 @@ stages:
       - epochs
   train:
     cmd: pdm run python train.py
-    vars:
-      - params.yaml.sha
     deps:
       - train.py
-      - params.yaml.sha
       - dataset/cifar-10-batches-py
-    outs:
-      - experiment/${hash}/
     params:
       - seed
       - epochs
