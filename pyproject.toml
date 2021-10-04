@@ -14,7 +14,7 @@ dependencies = [
     "jupyter~=1.0",
     "dvc~=2.7",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.7"
 dynamic = ["classifiers"]
 license = {text = "Apache-2.0"}
 classifiers = [
