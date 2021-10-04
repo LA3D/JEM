@@ -1,6 +1,5 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
-# shellcheck disable=SC1091
 pdm --pep582 > pep582.sh && source pep582.sh
 
 pdm sync
