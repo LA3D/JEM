@@ -17,9 +17,23 @@ stages:
       --to script train.ipynb
     deps:
     - path: train.ipynb
-      md5: d1e060dbd3a77afbcaa9be4306d0dd9d
-      size: 16218
+      md5: 670c0315fe491bad483932e1f532767b
+      size: 16723
     outs:
     - path: train.py
-      md5: cd19c865443bec849d88c52c733cd3f9
-      size: 11674
+      md5: b254e0b6e513ebac525b073fe8945145
+      size: 12085
+  generate-hash:
+    cmd: pdm run python hash_params.py
+    deps:
+    - path: hash_params.py
+      md5: 03ea641f720572238dc534d91e5eb9b4
+      size: 183
+    params:
+      params.yaml:
+        epochs: 1
+        seed: 123456
+    outs:
+    - path: params.yaml.sha
+      md5: 2ec34e3d5def4fcba8773e6f45a36b34
+      size: 72
