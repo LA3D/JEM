@@ -12,6 +12,7 @@ dependencies = [
     "torch~=1.9",
     "torchvision~=0.10",
     "jupyter~=1.0",
+    "dvc~=2.7",
 ]
 requires-python = ">=3.8"
 dynamic = ["classifiers"]
