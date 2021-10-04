@@ -12,3 +12,14 @@ stages:
       md5: b4947b13f75e53d7d1661505c7b936f7.dir
       size: 186214026
       nfiles: 7
+  convert-notebook:
+    cmd: JUPYTER_DATA_DIR=$PWD/__pypackages__/3.8/share/jupyter/ pdm run jupyter nbconvert
+      --to script train.ipynb
+    deps:
+    - path: train.ipynb
+      md5: 05b17d1b73eede52a06bca4bb6d6d2d6
+      size: 15742
+    outs:
+    - path: train.py
+      md5: 6f5d989d3968a4420edd746987dccc91
+      size: 11389

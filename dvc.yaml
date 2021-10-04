@@ -2,6 +2,12 @@ stages:
   extract-data:
     cmd: tar -xf dataset/cifar-10-python.tar.gz --exclude='readme.html' --directory dataset/
     deps:
-    - dataset/cifar-10-python.tar.gz
+      - dataset/cifar-10-python.tar.gz
     outs:
-    - dataset/cifar-10-batches-py
+      - dataset/cifar-10-batches-py
+  convert-notebook:
+    cmd: JUPYTER_DATA_DIR=$PWD/__pypackages__/3.8/share/jupyter/ pdm run jupyter nbconvert --to script train.ipynb
+    deps:
+      - train.ipynb
+    outs:
+      - train.py
