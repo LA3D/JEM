@@ -1,0 +1,34 @@
+[project]
+name = "Joint Energy Models"
+version = ""
+description = ""
+authors = [
+    {name = "Will Grathwohl ", email = "wgrathwohl@gmail.com"},
+    {name = "Chris Sweet", email = "csweet1@nd.edu"},
+    {name = "Priscila Moreira", email = "pmoreira@nd.edu"},
+    {name = "James Sweet", email = "jsweet@nd.edu"},
+]
+dependencies = [
+    "torch~=1.9",
+    "torchvision~=0.10",
+    "jupyter~=1.0",
+]
+requires-python = ">=3.8"
+dynamic = ["classifiers"]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Framework :: Jupyter",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English"
+]
+
+[project.urls]
+repository = "https://github.com/Crane-Stat-Analysis-Measurement-of-NN/JEM"
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
