@@ -11,20 +11,13 @@ stages:
       - train.ipynb
     outs:
       - train.py
-  generate-hash:
-    cmd: pdm run python hash_params.py
-    deps:
-      - hash_params.py
-    outs:
-      - params.yaml.sha
-    params:
-      - seed
-      - epochs
   train:
     cmd: pdm run train
     deps:
       - train.py
       - dataset/cifar-10-batches-py
+    outs:
+      - experiment/
     params:
       - seed
       - epochs
