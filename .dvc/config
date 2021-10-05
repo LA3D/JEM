@@ -1,5 +1,6 @@
 [core]
     remote = minio
+    analytics = false
 ['remote "minio"']
     url = s3://la3d-jem/
     endpointurl = https://s3.james-sweet.com
