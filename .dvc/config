@@ -1,0 +1,7 @@
+[core]
+    remote = minio
+['remote "minio"']
+    url = s3://la3d-jem/
+    endpointurl = https://s3.james-sweet.com
+    access_key_id = KGVFPS6G7C0LVMFQPS1ZFZ2X
+    secret_access_key = rA5fd9Ji8s0tI4_vcnxjIg0CUQXzSJtDDSpqhY0x6j_75JI1
