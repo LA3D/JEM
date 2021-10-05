@@ -4,5 +4,5 @@ pdm --pep582 > pep582.sh && source pep582.sh
 
 pdm sync
 
-pdm run dvc update dataset/*.dvc
-pdm run dvc repro
+"$(pdm info --package).bin/dvc" pull
+"$(pdm info --package).bin/pdm" repro
