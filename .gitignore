@@ -142,3 +142,4 @@ cython_debug/
 train.py
 pep582.sh
 /params.yaml.sha
+/experiment

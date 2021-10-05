@@ -16,12 +16,12 @@ stages:
     cmd: pdm run convert-notebook
     deps:
     - path: train.ipynb
-      md5: 670c0315fe491bad483932e1f532767b
-      size: 16723
+      md5: 0331dfe6c2392cf82dde60032803888b
+      size: 16656
     outs:
     - path: train.py
-      md5: b254e0b6e513ebac525b073fe8945145
-      size: 12085
+      md5: e46a99bb8641ad7bee3b7ece4a7a0380
+      size: 12022
   generate-hash:
     cmd: pdm run python hash_params.py
     deps:
@@ -36,3 +36,25 @@ stages:
     - path: params.yaml.sha
       md5: 2ec34e3d5def4fcba8773e6f45a36b34
       size: 72
+  train:
+    cmd: pdm run train
+    deps:
+    - path: dataset/cifar-10-batches-py
+      md5: b4947b13f75e53d7d1661505c7b936f7.dir
+      size: 186214026
+      nfiles: 7
+    - path: train.py
+      md5: e46a99bb8641ad7bee3b7ece4a7a0380
+      size: 12022
+    params:
+      params.yaml:
+        epochs: 1
+        seed: 123456
+    outs:
+    - path: experiment/
+      md5: 6d9fa1dc0aab2e30eb009edab8fe18db.dir
+      size: 875482938
+      nfiles: 2
+    - path: scores.json
+      md5: a82a07b344e2826a2f9de1cb05c3ddd0
+      size: 206
