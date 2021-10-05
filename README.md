@@ -16,6 +16,11 @@ curl -o pdm-fix.patch https://github.com/pradyunsg/installer/commit/2cd3927e7029
 
 ## Execution
 
+To run locally, the following script should be run:
+
 ```bash
 ./execute.sh
 ```
+
+To run on the CRC cluster, when logged in download this script and then execute it:
+[Script](https://gist.github.com/Omegaice/794f92b3ecbcdb22d8e8a79f890fa329)
